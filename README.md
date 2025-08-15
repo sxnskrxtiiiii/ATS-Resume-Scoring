@@ -31,60 +31,32 @@ python main.py
 
 # start frontend (http://localhost:8501)
 streamlit run streamlit_app/app.py
-Repository Map
-streamlit_app/
 
-app.py
+## Repository Map
+- [*streamlit_app/*](./streamlit_app/)
+  - [app.py](./streamlit_app/app.py)
+  - [components.py](./streamlit_app/components.py)
+  - [styles.css](./streamlit_app/styles.css)
+- [*agents/*](./agents/)
+  - [resume_processing_agent.py](./agents/resume_processing_agent.py)
+  - [jd_analysis_agent.py](./agents/jd_analysis_agent.py)
+  - [ats_scoring_agent.py](./agents/ats_scoring_agent.py)
+  - [improvement_agent.py](./agents/improvement_agent.py)
+  - [visualization_agent.py](./agents/visualization_agent.py)
+- [*database/*](./database/)
+  - [db_config.py](./database/db_config.py)
+  - [db_operations.py](./database/db_operations.py)
+  - [policies.py](./database/policies.py)
+- [*samples/*](./samples/)
+- [*backups/*](./backups/)
+- [*benchmarks.py*](./benchmarks.py)
+- [*main.py*](./main.py)
+- [*groq_client.py*](./groq_client.py)
+- [*requirements.txt*](./requirements.txt)
+- [*Dockerfile*](./Dockerfile)
+- [*docker-compose.yml*](./docker-compose.yml)
+- [*README.md*](./README.md)
 
-components.py
-
-styles.css
-
-agents/
-
-resume_processing_agent.py
-
-jd_analysis_agent.py
-
-ats_scoring_agent.py
-
-improvement_agent.py
-
-visualization_agent.py
-
-database/
-
-db_config.py
-
-db_operations.py
-
-policies.py
-
-samples/
-
-resumes/
-
-jds/
-
-report/ (sample outputs, if any)
-
-backups/
-
-atsdb_dump/, atsdb_dump_YYYY-MM-DD-HH-MM-SS/atsdb
-
-benchmarks.py
-
-main.py
-
-groq_client.py (if used for NLP tasks)
-
-requirements.txt
-
-Dockerfile
-
-docker-compose.yml
-
-README.md
 
 Documentation
 Setup & Installation
