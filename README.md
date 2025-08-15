@@ -26,11 +26,15 @@ Python 3.10+
 
 🎈Run locally
 
-bash
-pip install -r requirements.txt
-python main.py                      # start backend API (http://localhost:5000)
-streamlit run streamlit_app/app.py  # start frontend (http://localhost:8501)
+# bash
+    pip install -r requirements.txt
 
+# start backend API (http://localhost:5000)
+    python main.py                   
+
+# start frontend (http://localhost:8501)
+    streamlit run streamlit_app/app.py  
+    
 🗂️ Repository Map
 
 streamlit_app/
