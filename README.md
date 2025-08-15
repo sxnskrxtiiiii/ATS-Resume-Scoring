@@ -91,7 +91,7 @@ README.md
 
 📚 Documentation
 
-Setup & Installation
+Setup & Installation()
 
 System Architecture
 
