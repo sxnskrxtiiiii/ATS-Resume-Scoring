@@ -1,0 +1,66 @@
+
+pycache/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+env/
+.env
+
+IDE
+.vscode/
+.idea/
+
+OS
+.DS_Store
+Thumbs.db
+
+Streamlit
+.streamlit/cache/
+.streamlit/secrets.toml
+
+Logs
+logs/
+*.log
+
+Data & dumps
+backups/
+report/
+samples/resumes/.pdf
+samples/resumes/.docx
+samples/resumes/.doc
+samples/resumes/.txt
+samples/jds/.pdf
+samples/jds/.docx
+samples/jds/*.txt
+
+Build & docker
+dist/
+build/
+*.sqlite
+*.db
+*.tar
+*.zip
+
+Node
+node_modules/
+
+Qdrant/vector indexes (if any)
+rag/.index
+rag/.bin
+rag/*.jsonl
+
+Docker Compose override
+docker-compose.override.yml
+
+Then re-stage cleanly:
+
+git reset -q
+
+git rm -r --cached .
+
+git add .
+
+git commit -m "Initial commit: code and docs (ignore venv/backups/samples binaries)"

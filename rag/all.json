@@ -1,0 +1,102 @@
+[
+{
+"id": "ds_core_1",
+"title": "Data Science Core Skills",
+"industry": "Data Science",
+"role": "Data Scientist",
+"tags": ["skills", "taxonomy"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Core Data Science skills: Python, SQL, Pandas, NumPy, Scikit-learn, data cleaning, EDA, feature engineering, model evaluation, cross-validation, model selection, and visualization. Projects should report metrics like accuracy, F1, ROC-AUC, and include reproducibility and README."
+},
+{
+"id": "ds_bullets_1",
+"title": "Data Science Impact Bullets",
+"industry": "Data Science",
+"role": "Data Scientist",
+"tags": ["phrasing", "metrics", "resume_tips"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Use action-result bullets: Achieved X by doing Y using Z. Example: Improved F1 from 0.68 to 0.79 by class-weighting and feature scaling; reduced inference latency by 35% via model quantization and ONNX."
+},
+{
+"id": "ds_projects_1",
+"title": "DS Projects Expectations",
+"industry": "Data Science",
+"role": "Data Scientist",
+"tags": ["projects", "resume_tips"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Good DS projects: clear problem framing, data sourcing, EDA, baseline, model iterations, validation strategy, metrics, error analysis, and deployment notes. Include a concise README with reproduce steps and results."
+},
+{
+"id": "swe_core_1",
+"title": "Software Engineering Core Skills",
+"industry": "Software Engineering",
+"role": "Software Engineer",
+"tags": ["skills", "taxonomy"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Core SWE skills: Java, Python, C++, data structures, algorithms, REST APIs, SQL/NoSQL, testing, CI/CD, debugging, observability (logs/metrics/traces), performance optimization, and documentation."
+},
+{
+"id": "swe_bullets_1",
+"title": "SWE Impact Bullets",
+"industry": "Software Engineering",
+"role": "Software Engineer",
+"tags": ["phrasing", "metrics", "resume_tips"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Quantify outcomes: Reduced API p95 latency by 40% via Redis caching and query optimization; increased unit test coverage from 55%→85% with pytest; decreased deployment failures by 30% with GitHub Actions CI/CD."
+},
+{
+"id": "frontend_core_1",
+"title": "Frontend Core Skills",
+"industry": "Frontend Development",
+"role": "Frontend Developer",
+"tags": ["skills", "taxonomy"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Frontend fundamentals: JavaScript/TypeScript, React, HTML, CSS, responsive design, a11y, state management, performance optimization, Jest testing, build tooling (Vite/Webpack), API integration."
+},
+{
+"id": "backend_core_1",
+"title": "Backend Core Skills",
+"industry": "Backend Development",
+"role": "Backend Developer",
+"tags": ["skills", "taxonomy"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Backend essentials: Node.js/Java/Python, REST/GraphQL, authentication/authorization, relational schema design and SQL, caching, queues, observability, security basics (OWASP), error handling, scalability patterns."
+},
+{
+"id": "ats_formatting_1",
+"title": "ATS Formatting Do's",
+"industry": "Default",
+"role": null,
+"tags": ["ats", "resume_tips"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Use standard headings (Education, Experience, Skills), simple fonts, no tables/text boxes, single column. Export to PDF. Mirror JD phrases in Skills and Experience with evidence."
+},
+{
+"id": "keyword_alignment_1",
+"title": "Keyword Alignment Strategy",
+"industry": "Default",
+"role": null,
+"tags": ["ats", "keywords", "resume_tips"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "Mirror key JD terms exactly (e.g., Machine Learning, SQL, React). Place critical skills in Skills and support them with impact bullets. Avoid keyword stuffing—tie to outcomes and tools."
+},
+{
+"id": "junior_profile_tips_1",
+"title": "Junior Experience Tips",
+"industry": "Default",
+"role": null,
+"tags": ["resume_tips", "projects", "metrics"],
+"version": 1,
+"updated_at": "2025-08-13T21:45:00Z",
+"text": "If short on experience, highlight substantial projects, internships, and measurable results. Use impact bullets, link to code/demo, and include a README with metrics and how to run."
+}
+]

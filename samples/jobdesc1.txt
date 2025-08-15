@@ -1,0 +1,5 @@
+We are looking for a Software Engineer with 3+ years of experience.
+Required Skills: Python, Java, SQL, Machine Learning, HTML, CSS, JavaScript.
+Must have a Bachelor's degree in Computer Science or related field.
+Experience with Flask, Django, and database optimization is a plus.
+Location: New Delhi, India.
