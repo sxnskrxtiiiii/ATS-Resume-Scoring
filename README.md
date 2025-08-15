@@ -1,8 +1,9 @@
-ATS Resume Scoring System
+## ATS Resume Scoring System
 
 A consistent, deterministic ATS scoring system with resume/JD parsing, actionable recommendations, and a clean Streamlit UI.
 
-Key Features (Required Scope)
+## Key Features (Required Scope)
+
 Resume upload and parsing (PDF/DOCX/TXT)
 
 JD upload and requirement extraction
@@ -15,7 +16,9 @@ Visuals: metrics, skills pie, dashboards and reports
 
 Persistence of resumes/JDs/history and basic job recommendations
 
-Quick Start
+
+## Quick Start
+
 Prerequisites
 
 Python 3.10+
@@ -25,6 +28,7 @@ Python 3.10+
 Run locally
 
 bash
+
 pip install -r requirements.txt
 
 # start backend API (http://localhost:5000)
@@ -72,8 +76,10 @@ streamlit run streamlit_app/app.py
 - [Troubleshooting](./docs/troubleshooting.md)
 - [Performance Notes](./docs/performance.md)
 
-Demo
+## Demo
+
 bash
+
 Start backend: python main.py
 
 Start frontend: streamlit run streamlit_app/app.py
@@ -86,7 +92,8 @@ Upload Resume & Get Score (view metrics, pie, recommendations)
 
 Check Dashboard/Reports
 
-Scoring Categories (weights)
+## Scoring Categories (weights)
+
 Skills Match: 30%
 
 Experience Relevance: 25%
@@ -99,7 +106,8 @@ Keyword Optimization: 15%
 
 Determinism is ensured via fixed weights, stable parsing rules, and resume_hash tracking.
 
-Screenshots
+## Screenshots
+
 ![Dashboard](images[Score Page](images/score[Reports](images/reports.png & Privacy
 
 Keep secrets in .env (never commit).
@@ -108,7 +116,8 @@ Store only necessary fields; avoid sensitive PII where possible.
 
 Backups live under backups/ with timestamps.
 
-Feature Status
+## Feature Status
+
 ✅ Resume upload and parsing
 
 ✅ JD upload and parsing
