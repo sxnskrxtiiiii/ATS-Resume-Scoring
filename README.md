@@ -34,7 +34,7 @@ Python 3.10+
 
 # start frontend (http://localhost:8501)
     streamlit run streamlit_app/app.py  
-    
+
 🗂️ Repository Map
 
 streamlit_app/
@@ -89,29 +89,29 @@ README.md
 
 📚 Documentation
 
-docs/setup.md
+Setup & Installation
 
-docs/architecture.md
+System Architecture
 
-docs/api.md
+API Documentation
 
-docs/schema.md
+Database Schema
 
-docs/scoring.md
+Scoring Algorithm
 
-docs/jd_matching.md
+JD Analysis & Matching
 
-docs/recommendations.md
+Recommendations
 
-docs/frontend.md
+Frontend Guide
 
-docs/reports.md
+Reports & Analytics
 
-docs/testing.md
+Testing & Demo
 
-docs/troubleshooting.md
+Troubleshooting
 
-docs/performance.md
+Performance Notes
 
 Quick links (GitHub will auto-link if files exist):
 
