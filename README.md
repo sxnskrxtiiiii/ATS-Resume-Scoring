@@ -27,8 +27,6 @@ Python 3.10+
 
 Run locally
 
-bash
-
 pip install -r requirements.txt
 
 # start backend API (http://localhost:5000)
@@ -78,8 +76,6 @@ streamlit run streamlit_app/app.py
 
 ## Demo
 
-bash
-
 Start backend: python main.py
 
 Start frontend: streamlit run streamlit_app/app.py
@@ -108,13 +104,8 @@ Determinism is ensured via fixed weights, stable parsing rules, and resume_hash 
 
 ## Screenshots
 
-![Dashboard](images[Score Page](images/score[Reports](images/reports.png & Privacy
+![System Architecture](System_Architecture.jpg)
 
-Keep secrets in .env (never commit).
-
-Store only necessary fields; avoid sensitive PII where possible.
-
-Backups live under backups/ with timestamps.
 
 ## Feature Status
 
