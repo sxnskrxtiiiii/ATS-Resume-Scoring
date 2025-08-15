@@ -1,4 +1,5 @@
 ATS Resume Scoring System
+
 A consistent, deterministic ATS scoring system with resume/JD parsing, actionable recommendations, and a clean Streamlit UI.
 
 Key Features (Required Scope)
@@ -58,28 +59,18 @@ streamlit run streamlit_app/app.py
 - [*README.md*](./README.md)
 
 
-Documentation
-Setup & Installation
-
-System Architecture
-
-API Documentation
-
-Database Schema
-
-Scoring Algorithm
-
-JD Analysis & Matching
-
-Recommendations
-
-Frontend Guide
-
-Reports & Analytics
-
-Troubleshooting
-
-Performance Notes
+## Documentation
+- [Setup & Installation](./docs/setup.md)
+- [System Architecture](./docs/architecture.md)
+- [API Documentation](./docs/api.md)
+- [Database Schema](./docs/database.md)
+- [Scoring Algorithm](./docs/scoring.md)
+- [JD Analysis & Matching](./docs/matching.md)
+- [Recommendations](./docs/recommendations.md)
+- [Frontend Guide](./docs/frontend.md)
+- [Reports & Analytics](./docs/reports.md)
+- [Troubleshooting](./docs/troubleshooting.md)
+- [Performance Notes](./docs/performance.md)
 
 Demo
 bash
