@@ -1,23 +1,25 @@
 import os
 import json
 import hashlib
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any, List
+
 from pymongo import MongoClient, ASCENDING, DESCENDING
 from pymongo.errors import PyMongoError
 
-# ✅ Read MONGO_URI from environment (Docker Compose sets this)
+# === Mongo connection ===
+# Uses DB name from URI (e.g., mongodb://host:27017/atsdb)
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://mongodb:27017/atsdb")
 client = MongoClient(MONGO_URI)
-db = client.get_database()  # Will use the DB from the URI
+db = client.get_database()  # database inferred from URI
 
-# Collections
+# === Collections ===
 resumes = db["resumes"]
 jobdescs = db["jobdescs"]
 scores = db["scores"]
 jobs = db["jobs"]
 
-# Indexes (idempotent; safe to call at startup)
+# === Indexes (idempotent) ===
 resumes.create_index([("hash", ASCENDING)], unique=True)
 jobdescs.create_index([("hash", ASCENDING)], unique=True)
 scores.create_index([("resume_hash", ASCENDING), ("jd_hash", ASCENDING)], unique=True)
@@ -26,12 +28,22 @@ scores.create_index([("resume_hash", ASCENDING)])
 scores.create_index([("jd_hash", ASCENDING)])
 jobs.create_index([("status", ASCENDING)])
 
+# === Helpers ===
+def _utc_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
+
 def sha256_text(text: str) -> str:
     return hashlib.sha256((text or "").encode("utf-8")).hexdigest()
 
-def upsert_resume(parsed_resume: Dict[str, Any], user_id: Optional[str] = None, session_id: Optional[str] = None) -> str:
+# === Resume/JD upserts ===
+def upsert_resume(
+    parsed_resume: Dict[str, Any],
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None
+) -> str:
     raw_text = parsed_resume.get("raw_text", "")
     r_hash = sha256_text(raw_text)
+    now = _utc_iso()
     doc = {
         "hash": r_hash,
         "file_name": parsed_resume.get("file_name"),
@@ -42,49 +54,93 @@ def upsert_resume(parsed_resume: Dict[str, Any], user_id: Optional[str] = None, 
         "experience_years": parsed_resume.get("experience_years"),
         "skills": parsed_resume.get("skills", []),
         "raw_text": raw_text,
-        "parsed_json": parsed_resume,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "parsed_json": parsed_resume,   # nested JSON is fine here
+        "created_at": now,
+        "updated_at": now,
     }
     try:
-        resumes.update_one({"hash": r_hash}, {"$setOnInsert": doc}, upsert=True)
+        # Set on insert; always update updated_at
+        resumes.update_one(
+            {"hash": r_hash},
+            {"$setOnInsert": doc, "$set": {"updated_at": now}},
+            upsert=True
+        )
     except PyMongoError as e:
         print("Resume upsert error:", e)
     return r_hash
 
-def upsert_jobdesc(parsed_jd: Dict[str, Any], jd_text: str, user_id: Optional[str] = None, session_id: Optional[str] = None) -> str:
-    j_hash = sha256_text(jd_text or json.dumps(parsed_jd))
+def upsert_jobdesc(
+    parsed_jd: Dict[str, Any],
+    jd_text: str,
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None
+) -> str:
+    j_hash = sha256_text(jd_text or json.dumps(parsed_jd, ensure_ascii=False))
+    now = _utc_iso()
     doc = {
         "hash": j_hash,
         "user_id": user_id,
         "session_id": session_id,
         "jd_text": jd_text,
         "parsed_json": parsed_jd,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": now,
+        "updated_at": now,
     }
     try:
-        jobdescs.update_one({"hash": j_hash}, {"$setOnInsert": doc}, upsert=True)
+        jobdescs.update_one(
+            {"hash": j_hash},
+            {"$setOnInsert": doc, "$set": {"updated_at": now}},
+            upsert=True
+        )
     except PyMongoError as e:
         print("JD upsert error:", e)
     return j_hash
 
+# === Scores (cache/save/history) ===
 def get_cached_score(resume_hash: str, jd_hash: Optional[str]) -> Optional[Dict[str, Any]]:
+    """
+    Returns the score_json as a Python dict if found; handles text storage transparently.
+    """
     q = {"resume_hash": resume_hash, "jd_hash": jd_hash}
-    row = scores.find_one(q, {"_id": 0})
-    return row.get("score_json") if row else None
+    row = scores.find_one(q, {"_id": 0, "score_json": 1})
+    if not row:
+        return None
+    sj = row.get("score_json")
+    if isinstance(sj, dict):
+        return sj
+    if isinstance(sj, str) and sj.strip():
+        try:
+            return json.loads(sj)
+        except Exception:
+            return None
+    return None
 
-def save_score(resume_hash: str, jd_hash: Optional[str], job_role: str, score_json: Dict[str, Any],
-               user_id: Optional[str] = None, session_id: Optional[str] = None) -> None:
+def save_score(
+    resume_hash: str,
+    jd_hash: Optional[str],
+    job_role: str,
+    score_json: Dict[str, Any],
+    user_id: Optional[str] = None,
+    session_id: Optional[str] = None
+) -> None:
+    """
+    Store score_json consistently as TEXT (JSON string) to avoid mixed-type columns downstream.
+    """
+    try:
+        score_json_str = json.dumps(score_json, ensure_ascii=False)
+    except Exception:
+        score_json_str = str(score_json)
+
+    now = _utc_iso()
     doc = {
         "resume_hash": resume_hash,
         "jd_hash": jd_hash,
         "job_role": job_role,
-        "score_json": score_json,
+        "score_json": score_json_str,  # store as TEXT for consistency
         "user_id": user_id,
         "session_id": session_id,
-        "created_at": datetime.utcnow(),
-        "updated_at": datetime.utcnow(),
+        "created_at": now,
+        "updated_at": now,
     }
     scores.update_one(
         {"resume_hash": resume_hash, "jd_hash": jd_hash},
@@ -93,6 +149,10 @@ def save_score(resume_hash: str, jd_hash: Optional[str], job_role: str, score_js
     )
 
 def get_scoring_history(limit: int = 10, resume_hash: str = None) -> List[Dict[str, Any]]:
+    """
+    Returns recent scoring documents. score_json is returned as stored (TEXT),
+    which the UI can parse/flatten as needed, avoiding mixed dict/string types in DataFrames.
+    """
     match_stage = {}
     if resume_hash:
         match_stage["resume_hash"] = resume_hash
@@ -125,9 +185,9 @@ def get_scoring_history(limit: int = 10, resume_hash: str = None) -> List[Dict[s
         {
             "$project": {
                 "_id": 0,
-                "created_at": 1,
+                "created_at": 1,                  # ISO string
                 "job_role": 1,
-                "score_json": 1,
+                "score_json": 1,                  # TEXT (JSON string)
                 "resume_file": "$resume_data.file_name",
                 "resume_email": "$resume_data.email",
                 "jd_hash": 1,
@@ -139,6 +199,7 @@ def get_scoring_history(limit: int = 10, resume_hash: str = None) -> List[Dict[s
     ]
     return list(scores.aggregate(pipeline))
 
+# === Direct fetch helpers ===
 def get_resume_by_hash(resume_hash: str) -> Optional[Dict[str, Any]]:
     return resumes.find_one({"hash": resume_hash}, {"_id": 0})
 
@@ -150,9 +211,10 @@ def delete_resume_by_hash(resume_hash: str) -> bool:
     result = resumes.delete_one({"hash": resume_hash})
     return result.deleted_count > 0
 
+# === Jobs ===
 def insert_job(job: Dict[str, Any]) -> str:
     job["skills"] = [s.strip().lower() for s in job.get("skills", []) if isinstance(s, str)]
-    job["created_at"] = datetime.utcnow()
+    job["created_at"] = _utc_iso()
     job["status"] = job.get("status", "open")
     res = jobs.insert_one(job)
     return str(res.inserted_id)
@@ -173,23 +235,27 @@ def find_recommended_jobs(
     Find recommended jobs based on skill overlap, degree, and experience.
     Supports customizable matching criteria and scoring weights.
     """
-    # ✅ Normalize input skills and must-have list to lowercase
+    # Normalize input skills and must-have list to lowercase
     resume_skills = {s.strip().lower() for s in resume_skills if isinstance(s, str)}
     must_have_skills = must_have_skills or []
     must_have_skills = {s.strip().lower() for s in must_have_skills if isinstance(s, str)}
 
     def degree_rank(deg):
-        if not deg: return -1
+        if not deg:
+            return -1
         d = deg.strip().lower()
-        if "phd" in d or "ph.d" in d or "doctor" in d: return 3
-        if "master" in d or "m.e" in d or "m.tech" in d or "m.sc" in d or "msc" in d: return 2
-        if "bachelor" in d or "b.e" in d or "b.tech" in d or "bsc" in d or "b.sc" in d: return 1
-        if "diploma" in d: return 0
+        if "phd" in d or "ph.d" in d or "doctor" in d:
+            return 3
+        if "master" in d or "m.e" in d or "m.tech" in d or "m.sc" in d or "msc" in d:
+            return 2
+        if "bachelor" in d or "b.e" in d or "b.tech" in d or "bsc" in d or "b.sc" in d:
+            return 1
+        if "diploma" in d:
+            return 0
         return -1
 
     resume_deg_rank = degree_rank(resume_degree)
 
-    # Lowercase job skills before intersection in pipeline
     pipeline = [
         {"$match": {"status": "open"}},
         {
@@ -230,32 +296,31 @@ def find_recommended_jobs(
 
     enhanced = []
     for job in results:
-        # 1️⃣ Filter by minimum skills overlap
+        # Filter by minimum skills overlap
         if job.get("match_count", 0) < min_overlap:
             continue
 
-        # 2️⃣ Normalize job skills to lowercase for must-have check
         job_skills_lower = {s.lower() for s in job.get("skills", []) if isinstance(s, str)}
 
-        # 3️⃣ Apply must-have filter (case-insensitive)
+        # Must-have filter
         if must_have_skills and not must_have_skills.issubset(job_skills_lower):
             continue
 
-        # 4️⃣ Degree matching & bonus
+        # Degree matching & bonus
         job_deg_rank = degree_rank(job.get("degree_required"))
         degree_bonus = 0
         if resume_deg_rank >= 0 and job_deg_rank >= 0 and resume_deg_rank >= job_deg_rank:
             degree_bonus = weight_degree
         if require_degree and degree_bonus == 0:
-            continue  # skip if require_degree is true but no degree match
+            continue
 
-        # 5️⃣ Experience bonus
+        # Experience bonus
         job_min_exp = job.get("min_experience")
         exp_bonus = 0
         if isinstance(resume_exp_years, int) and isinstance(job_min_exp, (int, float)) and resume_exp_years >= job_min_exp:
             exp_bonus = weight_experience
 
-        # 6️⃣ Calculate composite score
+        # Composite
         base_score = weight_skills * int(job.get("match_count", 0))
         job["degree_bonus"] = degree_bonus
         job["exp_bonus"] = exp_bonus
@@ -263,7 +328,7 @@ def find_recommended_jobs(
 
         enhanced.append(job)
 
-    # Sort primarily by composite_score, then match_count, then created_at desc
+    # Sort: composite_score desc, then match_count desc, then created_at desc
     enhanced.sort(key=lambda j: (j.get("composite_score", 0), j.get("match_count", 0), j.get("created_at")), reverse=True)
 
     return enhanced[:limit]

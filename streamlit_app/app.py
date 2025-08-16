@@ -1,9 +1,9 @@
 import streamlit as st
 import requests
 import pandas as pd
-import time 
+import time
 import re
-import io
+import json
 from components import show_score_chart, show_suggestions, show_job_recommendations
 
 # === Backend URL ===
@@ -144,36 +144,78 @@ if st.session_state.active_page == pages[0]:
     st.markdown('<div class="card glass">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">Recent History</div>', unsafe_allow_html=True)
     try:
+        # Fetch history with a cache-buster
         resp = requests.get(
-        f"{BACKEND_URL}/history",
-        params={"limit": 20, "offset": 0, "_": int(time.time())}, # cache-buster
-        timeout=10
+            f"{BACKEND_URL}/history",
+            params={"limit": 20, "offset": 0, "_": int(time.time())},
+            timeout=10
         )
         if not resp.ok:
             st.error(f"History fetch failed: {resp.status_code} {resp.text}")
         else:
-            payload = resp.json() # {"items":[...], "total":N, "limit":..., "offset":...}
+            payload = resp.json()  # {"items":[...], "total":N, "limit":..., "offset":...}
             rows = payload.get("items", [])
             df = pd.DataFrame(rows)
 
             if "selected_resume_hash" not in st.session_state:
                 st.session_state.selected_resume_hash = ""
 
-            if not df.empty and "resume_hash" in df.columns:
-                selected = st.selectbox(
-                    "Select a Resume from history",
-                    options=[""] + list(df["resume_hash"].astype(str).unique()),
-                    index=0,
-                    format_func=lambda x: x if not x or len(x) < 12 else f"{x[:6]}...{x[-6:]}"
-                )
-                if selected:
-                    st.session_state.selected_resume_hash = selected
-                    st.success(f"Selected Resume Hash: {selected}")
-            elif df.empty:
-                st.info("No history yet.")
+            def _pluck_overall(x):
+                # Extract overall score from score_json string or dict
+                if isinstance(x, str) and x.strip():
+                    try:
+                        obj = json.loads(x)
+                        return obj.get("overall")
+                    except Exception:
+                        return None
+                if isinstance(x, dict):
+                    return x.get("overall")
+                return None
 
             if not df.empty:
-                st.dataframe(df, use_container_width=True)
+                # Normalize created_at (could be ISO string)
+                if "created_at" in df.columns:
+                    df["created_at"] = pd.to_datetime(df["created_at"], errors="coerce")
+
+                # Derive overall_score if not already present
+                if "overall_score" not in df.columns and "score_json" in df.columns:
+                    df["overall_score"] = pd.to_numeric(df["score_json"].apply(_pluck_overall), errors="coerce")
+
+                # Force any nested JSON-like columns to strings for Arrow safety
+                for col in ["score_json", "breakdown", "recommendations"]:
+                    if col in df.columns:
+                        df[col] = df[col].apply(
+                            lambda x: json.dumps(x, ensure_ascii=False)
+                            if isinstance(x, (dict, list))
+                            else ("" if x is None else str(x))
+                        )
+
+                # Provide a selection list by resume_hash
+                if "resume_hash" in df.columns:
+                    selected = st.selectbox(
+                        "Select a Resume from history",
+                        options=[""] + list(df["resume_hash"].astype(str).unique()),
+                        index=0,
+                        format_func=lambda x: x if not x or len(x) < 12 else f"{x[:6]}...{x[-6:]}"
+                    )
+                    if selected:
+                        st.session_state.selected_resume_hash = selected
+                        st.success(f"Selected Resume Hash: {selected}")
+                else:
+                    st.info("No resume hashes available to select.")
+
+                # Choose a simple, flat view for the table
+                cols_order = ["created_at", "job_role", "resume_hash", "jd_hash", "overall_score"]
+                use_cols = [c for c in cols_order if c in df.columns]
+                view = df[use_cols + [c for c in df.columns if c not in use_cols]]
+
+                # Sort newest first if created_at exists
+                if "created_at" in view.columns:
+                    view = view.sort_values("created_at", ascending=False)
+
+                st.dataframe(view, use_container_width=True)
+            else:
+                st.info("No history yet.")
 
     except Exception as e:
         st.error(f"⚠ {e}")
@@ -228,6 +270,7 @@ elif st.session_state.active_page == pages[2]:
 
     st.markdown('<div class="card glass">', unsafe_allow_html=True)
     st.markdown('<div class="card-title">Upload & Configure</div>', unsafe_allow_html=True)
+
     resume_file = st.file_uploader("Upload Resume (PDF/DOCX/TXT)", type=["pdf", "docx", "txt"])
     job_role = st.text_input("Target Job Role", placeholder="e.g., Software Engineer")
     jd_text_opt = st.text_area("Optional: Paste Job Description")
@@ -240,13 +283,13 @@ elif st.session_state.active_page == pages[2]:
                 files = {"resume": resume_file}
                 data = {"job_role": job_role}
                 if jd_text_opt.strip():
-                    data["jd"] = jd_text_opt
+                    data["jd"] = jd_text_opt  # main.py currently uses latest cached JD; this is informational
 
                 res = requests.post(f"{BACKEND_URL}/upload_resume", files=files, data=data, timeout=120)
                 if res.status_code == 200:
                     parsed = res.json()
                     score = parsed.get("score", {})
-
+                    # Ensure difference_from_benchmark is a simple object
                     if "difference_from_benchmark" in score:
                         score["difference_from_benchmark"] = {}
 
@@ -553,9 +596,18 @@ elif st.session_state.active_page == pages[5]:
                 else:
                     df_recent = pd.DataFrame(recents)
 
+                    # Normalize types for Arrow and sorting
+                    if "created_at" in df_recent.columns:
+                        df_recent["created_at"] = pd.to_datetime(df_recent["created_at"], errors="coerce")
+                    if "overall_score" in df_recent.columns:
+                        df_recent["overall_score"] = pd.to_numeric(df_recent["overall_score"], errors="coerce")
+
                     cols_order = ["created_at", "resume_hash", "jd_hash", "job_role", "overall_score"]
                     use_cols = [c for c in cols_order if c in df_recent.columns]
                     df_recent = df_recent[use_cols + [c for c in df_recent.columns if c not in use_cols]]
+
+                    if "created_at" in df_recent.columns:
+                        df_recent = df_recent.sort_values("created_at", ascending=False)
 
                     st.dataframe(df_recent, use_container_width=True)
 
@@ -624,12 +676,13 @@ elif st.session_state.active_page == pages[5]:
                     st.info("No missing JD skills detected in recent runs.")
                 else:
                     df_miss = pd.DataFrame(rows)
-                    df_miss["Skill"] = df_miss["skill"].apply(lambda s: s.capitalize())
-                    df_miss = df_miss[["Skill", "count"]].rename(columns={"count": "Count"})
-                    st.bar_chart(df_miss.set_index("Skill")["Count"])
+                    if not df_miss.empty:
+                        df_miss["Skill"] = df_miss["skill"].apply(lambda s: (s or "").capitalize())
+                        df_miss = df_miss[["Skill", "count"]].rename(columns={"count": "Count"})
+                        st.bar_chart(df_miss.set_index("Skill")["Count"])
         except Exception as e:
             st.error(f"Failed to load Top Missing JD Skills: {e}")
 
     st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown('</div>', unsafe_allow_html=True)
+# End of file
