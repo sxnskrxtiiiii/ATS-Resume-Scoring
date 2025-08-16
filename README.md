@@ -106,6 +106,9 @@ Determinism is ensured via fixed weights, stable parsing rules, and resume_hash 
 
 ![System Architecture](System_Architecture.jpg)
 
+## Demo
+
+![Demo Video](demo/ATS_Demo.mp4)
 
 ## Feature Status
 
